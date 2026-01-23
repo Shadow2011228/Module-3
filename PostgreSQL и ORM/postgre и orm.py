@@ -78,3 +78,9 @@ data = a.query(Users).all()
 for row in data:
     print(row.id, row.name, row.hp, row.damage)
 print('=========================')
+
+a.query(Users).filter(Users.id % 2 == 0).update({'name': 'Jackie Chan'})
+data = a.query(Users).all()
+for row in data:
+    print(row.id, row.name, row.hp, row.damage)
+print('=========================')
