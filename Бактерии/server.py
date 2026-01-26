@@ -1,6 +1,7 @@
 import socket
 import time
 
+import pygame
 
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Отключаем пакетирование
@@ -28,4 +29,14 @@ while True:
         except:
             pass
 
+    # Отправляем статус игрового поля
+    for sock in players:
+        try:
+            sock.send("Игра".encode())
+        except:
+            players.remove(sock)
+            sock.close()
+            print("Сокет закрыт")
+
     time.sleep(0.01)
+
