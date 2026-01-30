@@ -15,6 +15,9 @@ CC = (WIDTH//2,HEIGHT//2)
 old = (0,0)
 radius = 50
 
+font = pygame.font.SysFont('arial', 36)
+text_surface = font.render('Hello, Pygame!', True, (100, 100, 100))
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Бактерии")
 
@@ -42,6 +45,7 @@ while run:
     # Рисуем новое поле
     screen.fill('gray')
     pygame.draw.circle(screen, (0, 255, 0), CC, radius)
+    screen.blit(text_surface, CC)
     pygame.display.update()
 
     time.sleep(0.01)
