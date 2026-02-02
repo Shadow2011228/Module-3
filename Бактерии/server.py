@@ -24,6 +24,18 @@ screen = pygame.display.set_mode((WIDHT_SERVER, HEIGHT_SERVER))
 pygame.display.set_caption("Сервер")
 clock = pygame.time.Clock()
 
+# Расшифровывает строку-вектор, превращая в список с 2-мя числами
+def find(vector: str):
+    first = None
+    for num, sign in enumerate(vector):
+        if sign == "<":
+            first = num
+        if sign == ">" and first is not None:
+            second = num
+            result = list(map(float, vector[first + 1:second].split(",")))
+            return result
+    return ""
+
 # Декларативный класс таблицы игроков
 class Player(Base):
     __tablename__ = "gamers"
@@ -66,6 +78,20 @@ class LocalPlayer:
         self.w_vision = 800
         self.h_vision = 600
 
+    def update(self):
+        self.x += self.speed_x
+        self.y += self.speed_y
+
+    # регулирует скорость каждого игрока
+    def change_speed(self, vector):
+        vector = find(vector)
+        if vector[0] == 0 and vector[1] == 0:
+            self.speed_x = self.speed_y = 0
+        else:
+            vector = vector[0] * self.abs_speed, vector[1] * self.abs_speed
+            self.speed_x = vector[0]
+            self.speed_y = vector[1]
+
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Отключаем пакетирование
 main_socket.bind(("localhost", 10000))  # IP и порт привязываем к порту
@@ -99,6 +125,7 @@ while server_works:
         try:
             data = players[id].sock.recv(1024).decode()
             print("Получил", data)
+            players[id].change_speed(data)
         except:
             pass
 
@@ -125,7 +152,9 @@ while server_works:
         x = player.x * WIDHT_SERVER // WIDHT_ROOM
         y = player.y * HEIGHT_SERVER // HEIGHT_ROOM
         size = player.size * WIDHT_SERVER // WIDHT_ROOM
+        print(x,y)
         pygame.draw.circle(screen, "yellow2", (x, y), size)
+        player.update()
 
     pygame.display.update()
 

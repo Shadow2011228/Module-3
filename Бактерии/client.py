@@ -1,6 +1,7 @@
 import math
 import socket, time
 import pygame
+import pyautogui
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Настраиваем сокет
 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Отключаем пакетирование
@@ -15,8 +16,13 @@ CC = (WIDTH//2,HEIGHT//2)
 old = (0,0)
 radius = 50
 
-font = pygame.font.SysFont('arial', 36)
-text_surface = font.render('Hello, Pygame!', True, (100, 100, 100))
+text = pyautogui.prompt(text='Выберете цвет для бактерии', title='Поле ввода')
+text2 = pyautogui.prompt(text='Выберете имя для бактерии', title='Поле ввода')
+
+font = pygame.font.SysFont('arial', 15)
+text_surface = font.render(text2, True, (0, 0, 0))
+text_rect = text_surface.get_rect()
+text_rect.center = CC
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Бактерии")
@@ -44,8 +50,8 @@ while run:
 
     # Рисуем новое поле
     screen.fill('gray')
-    pygame.draw.circle(screen, (0, 255, 0), CC, radius)
-    screen.blit(text_surface, CC)
+    pygame.draw.circle(screen, text, CC, radius)
+    screen.blit(text_surface, text_rect)
     pygame.display.update()
 
     time.sleep(0.01)
