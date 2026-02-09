@@ -36,6 +36,17 @@ def find(vector: str):
             return result
     return ""
 
+def find_color(info: str):
+    first = None
+    for num, sign in enumerate(info):
+        if sign == "<":
+            first = num
+        if sign == ">" and first is not None:
+            second = num
+            result = info[first + 1:second].split(",")
+            return result
+    return ""
+
 # Декларативный класс таблицы игроков
 class Player(Base):
     __tablename__ = "gamers"
@@ -92,6 +103,33 @@ class LocalPlayer:
             self.speed_x = vector[0]
             self.speed_y = vector[1]
 
+    def sync(self):
+        self.db.size = self.size
+        self.db.abs_speed = self.abs_speed
+        self.db.speed_x = self.speed_x
+        self.db.speed_y = self.speed_y
+        self.db.errors = self.errors
+        self.db.x = self.x
+        self.db.y = self.y
+        self.db.color = self.color
+        self.db.w_vision = self.w_vision
+        self.db.h_vision = self.h_vision
+        s.merge(self.db)
+        s.commit()
+
+    def load(self):
+        self.size = self.db.size
+        self.abs_speed = self.db.abs_speed
+        self.speed_x = self.db.speed_x
+        self.speed_y = self.db.speed_y
+        self.errors = self.db.errors
+        self.x = self.db.x
+        self.y = self.db.y
+        self.color = self.db.color
+        self.w_vision = self.db.w_vision
+        self.h_vision = self.db.h_vision
+        return self
+
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Отключаем пакетирование
 main_socket.bind(("localhost", 10000))  # IP и порт привязываем к порту
@@ -108,7 +146,13 @@ while server_works:
         new_socket, addr = main_socket.accept()  # принимаем входящие
         print('Подключился', addr)
         new_socket.setblocking(False)
+        login = new_socket.recv(1024).decode()
         player = Player("Имя", addr)
+
+        if login.startswith("color"):
+            data = find_color(login[6:])
+            player.name, player.color = data
+
         s.merge(player)
         s.commit()
 
@@ -116,6 +160,7 @@ while server_works:
         data = s.query(Player).filter(Player.address == addr)
         for user in data:
             player = LocalPlayer(user.id, "Имя", new_socket, addr)
+            player.load()
             players[user.id] = player
     except BlockingIOError:
         pass
@@ -153,8 +198,9 @@ while server_works:
         y = player.y * HEIGHT_SERVER // HEIGHT_ROOM
         size = player.size * WIDHT_SERVER // WIDHT_ROOM
         print(x,y)
-        pygame.draw.circle(screen, "yellow2", (x, y), size)
+        pygame.draw.circle(screen, player.color, (x, y), size)
         player.update()
+        player.sync()
 
     pygame.display.update()
 
