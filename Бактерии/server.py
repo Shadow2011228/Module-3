@@ -90,8 +90,20 @@ class LocalPlayer:
         self.h_vision = 600
 
     def update(self):
-        self.x += self.speed_x
+        # х координата
+        if self.x - self.size <= 0:  # Если игрок вылазит за левую стенку
+            if self.speed_x >= 0:  # Но при этом двигается право
+                self.x += self.speed_x  # то двигаем его
+        elif self.x + self.size >= WIDHT_ROOM:  # Если игрок вылазит за правую стенку
+            if self.speed_x <= 0:  # Но при этом двигается влево
+                self.x += self.speed_x  # то двигаем его
+        else:  # Если игрок находится в границе комнаты
+            self.x += self.speed_x
+
+        #тут
         self.y += self.speed_y
+
+
 
     # регулирует скорость каждого игрока
     def change_speed(self, vector):
@@ -159,8 +171,7 @@ while server_works:
         addr = f'({addr[0]},{addr[1]})'
         data = s.query(Player).filter(Player.address == addr)
         for user in data:
-            player = LocalPlayer(user.id, "Имя", new_socket, addr)
-            player.load()
+            player = LocalPlayer(user.id, "Имя", new_socket, addr).load()
             players[user.id] = player
     except BlockingIOError:
         pass
@@ -174,10 +185,50 @@ while server_works:
         except:
             pass
 
+    # Определим, что видит каждый игрок
+    visible_bacteries = {}
+    for id in list(players):
+        visible_bacteries[id] = []
+
+    pairs = list(players.items())
+    for i in range(0, len(pairs)):
+        for j in range(i + 1, len(pairs)):
+            # Рассматриваем пару игроков
+            hero_1: LocalPlayer = pairs[i][1]
+            hero_2: LocalPlayer = pairs[j][1]
+            dist_x = hero_2.x - hero_1.x
+            dist_y = hero_2.y - hero_1.y
+
+            # i-й игрок видит j-того
+            if abs(dist_x) <= hero_1.w_vision // 2 + hero_2.size and abs(dist_y) <= hero_1.h_vision // 2 + hero_2.size:
+                # Подготовим данные к добавлению в список
+                x_ = str(round(dist_x))
+                y_ = str(round(dist_y))  # временные
+                size_ = str(round(hero_2.size))
+                color_ = hero_2.color
+
+                data = x_ + " " + y_ + " " + size_ + " " + color_
+                visible_bacteries[hero_1.id].append(data)
+
+            # j-й игрок видит i-того
+            if abs(dist_x) <= hero_2.w_vision // 2 + hero_1.size and abs(dist_y) <= hero_2.h_vision // 2 + hero_1.size:
+                # Подготовим данные к добавлению в список
+                x_ = str(round(-dist_x))
+                y_ = str(round(-dist_y))  # временные
+                size_ = str(round(hero_1.size))
+                color_ = hero_1.color
+
+                data = x_ + " " + y_ + " " + size_ + " " + color_
+                visible_bacteries[hero_2.id].append(data)
+
+    # Формируем ответ каждой бактерии
+    for id in list(players):
+        visible_bacteries[id] = "<" + ",".join(visible_bacteries[id]) + ">"
+
     # Отправляем статус игрового поля
     for id in players:
         try:
-            players[id].sock.send("Игра".encode())
+            players[id].sock.send(visible_bacteries[id].encode())
         except:
             players[id].sock.close()
             del players[id]

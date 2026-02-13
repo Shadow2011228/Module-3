@@ -1,18 +1,19 @@
 import math
-import socket, time
+import socket
+import time
 import pygame
-import pyautogui
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox
+from tkinter.colorchooser import askcolor
 
 pygame.init()
 
 WIDTH = 800
 HEIGHT = 600
-CC = (WIDTH//2,HEIGHT//2)
+CC = (WIDTH // 2, HEIGHT // 2)
 
-old = (0,0)
+old = (0, 0)
 radius = 50
 
 color = ''
@@ -28,12 +29,6 @@ def login():
         tk.messagebox.showerror("Ошибка", "Ты не выбрал цвет или не ввёл имя!")
 
 
-def scroll(event):
-    global color
-    color = combo.get()
-    style.configure("TCombobox", fieldbackground=color, background="white")
-
-
 root = tk.Tk()
 root.title("Логин")
 root.geometry("300x200")
@@ -43,19 +38,18 @@ style.theme_use('clam')
 
 name_label = tk.Label(root, text="Введи свой никнейм:")
 name_label.pack()
+
 row = tk.Entry(root, width=30, justify="center")
 row.pack()
-color_label = tk.Label(root, text="Выбери цвет:")
-color_label.pack()
-colors = ['Maroon', 'DarkRed', 'FireBrick', 'Red', 'Salmon', 'Tomato', 'Coral', 'OrangeRed', 'Chocolate', 'SandyBrown',
-          'DarkOrange', 'Orange', 'DarkGoldenrod', 'Goldenrod', 'Gold', 'Olive', 'Yellow', 'YellowGreen', 'GreenYellow',
-          'Chartreuse', 'LawnGreen', 'Green', 'Lime', 'SpringGreen', 'MediumSpringGreen', 'Turquoise',
-          'LightSeaGreen', 'MediumTurquoise', 'Teal', 'DarkCyan', 'Aqua', 'Cyan', 'DeepSkyBlue',
-          'DodgerBlue', 'RoyalBlue', 'Navy', 'DarkBlue', 'MediumBlue']
 
-combo = ttk.Combobox(root, values=colors, textvariable=color)
-combo.bind("<<ComboboxSelected>>", scroll)
-combo.pack()
+def arc():
+    global color
+    color_code = askcolor(title="Выбери цвет")
+    color = color_code[1]
+
+color_btn = tk.Button(root, text="Выбери цвет:", command=arc)
+color_btn.pack()
+
 name_btn = tk.Button(root, text="Зайти в игру", command=login)
 name_btn.pack()
 root.mainloop()
@@ -74,6 +68,26 @@ text_rect.center = CC
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Бактерии")
+
+def find(vector: str):
+    first = None
+    for num, sign in enumerate(vector):
+        if sign == "<":
+            first = num
+        if sign == ">" and first is not None:
+            second = num
+            result = vector[first + 1:second]  # Поменяли
+            return result
+    return ""
+
+def draw_bacteries(data: list[str]):
+    for num, bact in enumerate(data):
+        data = bact.split(" ")  # Разбиваем по пробелам подстроку одной бактерии
+        x = CC[0] + int(data[0])
+        y = CC[1] + int(data[1])
+        size = int(data[2])
+        color = data[3]
+        pygame.draw.circle(screen, color, (x, y), size)
 
 run = True
 while run:
@@ -95,10 +109,13 @@ while run:
     # Получаем
     data = sock.recv(1024).decode()
     print("Получил:", data)
+    data = find(data).split(",")  # Разбиваем на шары
 
     # Рисуем новое поле
     screen.fill('gray')
     pygame.draw.circle(screen, color, CC, radius)
+    if data!= ['']:
+        draw_bacteries(data)
     screen.blit(text_surface, text_rect)
     pygame.display.update()
 
