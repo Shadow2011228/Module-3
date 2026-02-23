@@ -21,6 +21,8 @@ pygame.init()
 WIDHT_ROOM, HEIGHT_ROOM = 4000, 4000
 WIDHT_SERVER, HEIGHT_SERVER = 300, 300
 FPS = 100
+FOOD_SIZE = 15
+FOOD_QUANTITY = WIDHT_ROOM * HEIGHT_ROOM // 40000
 
 colors = ['Maroon', 'DarkRed', 'FireBrick', 'Red', 'Salmon', 'Tomato', 'Coral', 'OrangeRed', 'Chocolate', 'SandyBrown',
           'DarkOrange', 'Orange', 'DarkGoldenrod', 'Goldenrod', 'Gold', 'Olive', 'Yellow', 'YellowGreen', 'GreenYellow',
@@ -157,6 +159,13 @@ class LocalPlayer:
         self.h_vision = self.db.h_vision
         return self
 
+class Food:
+    def __init__(self, x, y, size, color):
+        self.x = x
+        self.y = y
+        self.size = size
+        self.color = color
+
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Отключаем пакетирование
 main_socket.bind(("localhost", 10000))  # IP и порт привязываем к порту
@@ -181,6 +190,16 @@ for x in range(MOBS_QUANTITY):
 
     local_mob = LocalPlayer(server_mob.id, server_mob.name, None, None).load()
     players[server_mob.id] = local_mob  # Записываем всех мобов в словарь
+
+# Создание еды
+foods = []
+for i in range(FOOD_QUANTITY):
+    foods.append(Food(
+        x=random.randint(0, WIDHT_ROOM),
+        y=random.randint(0, HEIGHT_ROOM),
+        size=FOOD_SIZE,
+        color=random.choice(colors)
+    ))
 
 tick = -1
 server_works = True
@@ -210,7 +229,6 @@ while server_works:
                 players[user.id] = player
         except BlockingIOError:
             pass
-
     # Считываем команды игроков
     for id in players:
         if players[id].sock is not None:
@@ -218,8 +236,9 @@ while server_works:
                 data = players[id].sock.recv(1024).decode()
                 print("Получил", data)
                 players[id].change_speed(data)
+                players[id].errors = 0
             except:
-                pass
+                players[id].errors += 1
         else:
             if tick % 400 == 0:
                 vector = f"<{random.randint(-1, 1)},{random.randint(-1, 1)}>"
@@ -232,6 +251,27 @@ while server_works:
 
     pairs = list(players.items())
     for i in range(0, len(pairs)):
+        for food in foods:
+            hero: LocalPlayer = pairs[i][1]
+            dist_x = food.x - hero.x
+            dist_y = food.y - hero.y
+            if abs(dist_x) <= hero.w_vision // 2 + food.size and abs(dist_y) <= hero.h_vision // 2 + food.size:
+                # Проверка может ли 1-й игрок видеть еду.
+                distance = math.sqrt(dist_x ** 2 + dist_y ** 2)
+                if distance < hero.size:
+                    # Тут мы в будущем напишем код увеличения размера
+                    food.size = 0
+                    foods.remove(food)
+                if hero.address is not None and food.size != 0:
+                    # Подготовим данные к добавлению в список
+                    x_ = str(round(dist_x))
+                    y_ = str(round(dist_y))  # временные
+                    size_ = str(round(food.size))
+                    color_ = food.color
+
+                    data = x_ + " " + y_ + " " + size_ + " " + color_
+                    visible_bacteries[hero.id].append(data)
+
         for j in range(i + 1, len(pairs)):
             # Рассматриваем пару игроков
             hero_1: LocalPlayer = pairs[i][1]
@@ -315,6 +355,8 @@ while server_works:
         print(x,y)
         pygame.draw.circle(screen, player.color, (x, y), size)
         player.update()
+        if tick % 500 == 0:
+            player.sync()
 
 
 

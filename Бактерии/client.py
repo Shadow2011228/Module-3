@@ -97,7 +97,6 @@ while run:
         if pygame.mouse.get_focused():
             pos = pygame.mouse.get_pos()
             vector = pos[0] - CC[0], pos[1] - CC[1]
-
             lenv = math.sqrt(vector[0] ** 2 + vector[1] ** 2)
             vector = vector[0] / lenv, vector[1] / lenv
 
