@@ -259,7 +259,7 @@ while server_works:
                 # Проверка может ли 1-й игрок видеть еду.
                 distance = math.sqrt(dist_x ** 2 + dist_y ** 2)
                 if distance < hero.size:
-                    # Тут мы в будущем напишем код увеличения размера
+                    hero.size = math.sqrt(hero.size ** 2 + food.size ** 2)
                     food.size = 0
                     foods.remove(food)
                 if hero.address is not None and food.size != 0:
@@ -286,6 +286,7 @@ while server_works:
                 if distance <= hero_1.size and hero_1.size > 1.1 * hero_2.size:
                     # Меняем радиус первого игрока
                     hero_2.size, hero_2.speed_x, hero_2.speed_y = 0, 0, 0
+                    hero_1.size = math.sqrt(hero_1.size ** 2 + hero_2.size ** 2)
 
                 if hero_1.address is not None:
                     # Подготовим данные к добавлению в список
@@ -304,6 +305,7 @@ while server_works:
                 if distance <= hero_2.size and hero_2.size > 1.1 * hero_1.size:
                     # Меняем радиус второго игрока
                     hero_1.size, hero_1.speed_x, hero_1.speed_y = 0, 0, 0
+                    hero_2.size = math.sqrt(hero_2.size ** 2 + hero_1.size ** 2)
 
                 if hero_2.address is not None:
                     # Подготовим данные к добавлению в список
@@ -317,7 +319,8 @@ while server_works:
 
     # Формируем ответ каждой бактерии
     for id in list(players):
-        visible_bacteries[id] = "<" + ",".join(visible_bacteries[id]) + ">"
+        r_ = str(round(players[id].size))
+        visible_bacteries[id] = [r_] + visible_bacteries[id]  # Добавляем в начало списка размер игрока
 
     # Отправляем статус игрового поля
     for id in players:
