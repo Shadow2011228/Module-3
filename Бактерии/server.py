@@ -1,7 +1,6 @@
 import math
 import random
 import socket
-import time
 import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
@@ -11,7 +10,7 @@ import pygame
 from russian_names import RussianNames
 
 
-engine = create_engine("postgresql+psycopg2://postgres:Zz050508@localhost/rebotica")
+engine = create_engine("postgresql+psycopg2://postgres:68307@localhost/rebotica")
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 s = Session()
@@ -21,22 +20,22 @@ pygame.init()
 WIDHT_ROOM, HEIGHT_ROOM = 4000, 4000
 WIDHT_SERVER, HEIGHT_SERVER = 300, 300
 FPS = 100
-FOOD_SIZE = 15
-FOOD_QUANTITY = WIDHT_ROOM * HEIGHT_ROOM // 40000
-
 colors = ['Maroon', 'DarkRed', 'FireBrick', 'Red', 'Salmon', 'Tomato', 'Coral', 'OrangeRed', 'Chocolate', 'SandyBrown',
           'DarkOrange', 'Orange', 'DarkGoldenrod', 'Goldenrod', 'Gold', 'Olive', 'Yellow', 'YellowGreen', 'GreenYellow',
           'Chartreuse', 'LawnGreen', 'Green', 'Lime', 'SpringGreen', 'MediumSpringGreen', 'Turquoise',
           'LightSeaGreen', 'MediumTurquoise', 'Teal', 'DarkCyan', 'Aqua', 'Cyan', 'DeepSkyBlue',
           'DodgerBlue', 'RoyalBlue', 'Navy', 'DarkBlue', 'MediumBlue']
 MOBS_QUANTITY = 25
+FOOD_SIZE = 15
+FOOD_QUANTITY = WIDHT_ROOM * HEIGHT_ROOM // 40000
+
 
 # Создание окна сервера
 screen = pygame.display.set_mode((WIDHT_SERVER, HEIGHT_SERVER))
 pygame.display.set_caption("Сервер")
 clock = pygame.time.Clock()
 
-# Расшифровывает строку-вектор, превращая в список с 2-мя числами
+
 def find(vector: str):
     first = None
     for num, sign in enumerate(vector):
@@ -48,6 +47,7 @@ def find(vector: str):
             return result
     return ""
 
+
 def find_color(info: str):
     first = None
     for num, sign in enumerate(info):
@@ -58,6 +58,7 @@ def find_color(info: str):
             result = info[first + 1:second].split(",")
             return result
     return ""
+
 
 # Декларативный класс таблицы игроков
 class Player(Base):
@@ -80,9 +81,8 @@ class Player(Base):
         self.name = name
         self.address = address
 
-Base.metadata.create_all(engine)
 
-# Локальный класс таблицы игроков
+# Локальный класс игроков
 class LocalPlayer:
     def __init__(self, id, name, sock, addr):
         self.id = id
@@ -112,6 +112,7 @@ class LocalPlayer:
         else:  # Если игрок находится в границе комнаты
             self.x += self.speed_x
 
+        # y координата
         if self.y - self.size <= 0:  # Если игрок вылазит за левую стенку
             if self.speed_y >= 0:  # Но при этом двигается право
                 self.y += self.speed_y  # то двигаем его
@@ -121,8 +122,14 @@ class LocalPlayer:
         else:  # Если игрок находится в границе комнаты
             self.y += self.speed_y
 
+        # Меняем размер
+        if self.size >= 100:
+            self.size -= self.size / 18000
 
-    # регулирует скорость каждого игрока
+    def new_speed(self):
+        #  Меняем абсолютную скорость игрока
+        self.abs_speed = 10 / math.sqrt(self.size)
+
     def change_speed(self, vector):
         vector = find(vector)
         if vector[0] == 0 and vector[1] == 0:
@@ -131,6 +138,19 @@ class LocalPlayer:
             vector = vector[0] * self.abs_speed, vector[1] * self.abs_speed
             self.speed_x = vector[0]
             self.speed_y = vector[1]
+
+    def load(self):
+        self.size = self.db.size
+        self.abs_speed = self.db.abs_speed
+        self.speed_x = self.db.speed_x
+        self.speed_y = self.db.speed_y
+        self.errors = self.db.errors
+        self.x = self.db.x
+        self.y = self.db.y
+        self.color = self.db.color
+        self.w_vision = self.db.w_vision
+        self.h_vision = self.db.h_vision
+        return self
 
     def sync(self):
         self.db.size = self.size
@@ -146,18 +166,6 @@ class LocalPlayer:
         s.merge(self.db)
         s.commit()
 
-    def load(self):
-        self.size = self.db.size
-        self.abs_speed = self.db.abs_speed
-        self.speed_x = self.db.speed_x
-        self.speed_y = self.db.speed_y
-        self.errors = self.db.errors
-        self.x = self.db.x
-        self.y = self.db.y
-        self.color = self.db.color
-        self.w_vision = self.db.w_vision
-        self.h_vision = self.db.h_vision
-        return self
 
 class Food:
     def __init__(self, x, y, size, color):
@@ -166,14 +174,16 @@ class Food:
         self.size = size
         self.color = color
 
-main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+Base.metadata.create_all(engine)
+players = {}
+
+main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Настраиваем сокет
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Отключаем пакетирование
 main_socket.bind(("localhost", 10000))  # IP и порт привязываем к порту
 main_socket.setblocking(False)  # Непрерывность, не ждём ответа
 main_socket.listen(5)  # Прослушка входящих соединений, 5 одновременных подключений
 print("Сокет создался")
-
-players = {}
 
 # Создание мобов
 names = RussianNames(count=MOBS_QUANTITY * 2, patronymic=False, surname=False, rare=True)
@@ -187,8 +197,8 @@ for x in range(MOBS_QUANTITY):
     server_mob.size = random.randint(10, 100)
     s.add(server_mob)
     s.commit()
-
     local_mob = LocalPlayer(server_mob.id, server_mob.name, None, None).load()
+    local_mob.new_speed()
     players[server_mob.id] = local_mob  # Записываем всех мобов в словарь
 
 # Создание еды
@@ -205,7 +215,7 @@ tick = -1
 server_works = True
 while server_works:
     clock.tick(FPS)
-    tick+=1
+    tick += 1
     if tick % 200 == 0:
         try:
             # проверяем желающих войти в игру
@@ -227,14 +237,44 @@ while server_works:
             for user in data:
                 player = LocalPlayer(user.id, "Имя", new_socket, addr).load()
                 players[user.id] = player
+
         except BlockingIOError:
             pass
+
+        # Дополняем список мобов
+        if len(foods) != 0:
+            need = MOBS_QUANTITY - len(players)
+            names = RussianNames(count=need * 2, patronymic=False, surname=False, rare=True)
+            names = list(set(names))  # Список неповторяющихся имён
+            for i in range(MOBS_QUANTITY - len(players)):
+                server_mob = Player(names[i], None)
+                server_mob.color = random.choice(colors)
+                spawn: LocalPlayer = random.choice(foods)
+                foods.remove(spawn)  # Удаляем бактерию, чтобы моб её не съел
+                server_mob.x, server_mob.y = spawn.x, spawn.y
+                server_mob.size = random.randint(10, 100)
+                s.add(server_mob)
+                s.commit()
+                local_mob = LocalPlayer(server_mob.id, server_mob.name, None, None).load()
+                local_mob.new_speed()
+                players[server_mob.id] = local_mob  # Записываем новых мобов в словарь
+
+        # Добавляем список еды
+        need = FOOD_QUANTITY - len(foods)
+        for i in range(need):
+            foods.append(Food(
+                x=random.randint(0, WIDHT_ROOM),
+                y=random.randint(0, HEIGHT_ROOM),
+                size=FOOD_SIZE,
+                color=random.choice(colors)
+            ))
+
+
     # Считываем команды игроков
-    for id in players:
+    for id in list(players):
         if players[id].sock is not None:
             try:
                 data = players[id].sock.recv(1024).decode()
-                print("Получил", data)
                 players[id].change_speed(data)
                 players[id].errors = 0
             except:
@@ -245,12 +285,14 @@ while server_works:
                 players[id].change_speed(vector)  # Случайный вектор для мобов
 
     # Определим, что видит каждый игрок
+    # + съедение друг друга
     visible_bacteries = {}
     for id in list(players):
         visible_bacteries[id] = []
 
     pairs = list(players.items())
     for i in range(0, len(pairs)):
+        # Только для игрока, отображение еды
         for food in foods:
             hero: LocalPlayer = pairs[i][1]
             dist_x = food.x - hero.x
@@ -259,7 +301,9 @@ while server_works:
                 # Проверка может ли 1-й игрок видеть еду.
                 distance = math.sqrt(dist_x ** 2 + dist_y ** 2)
                 if distance < hero.size:
+                    # Тут мы в будущем напишем код увеличения размера
                     hero.size = math.sqrt(hero.size ** 2 + food.size ** 2)
+                    hero.new_speed()
                     food.size = 0
                     foods.remove(food)
                 if hero.address is not None and food.size != 0:
@@ -284,9 +328,9 @@ while server_works:
                 # Проверка может ли 1-й съесть 2-го игрока
                 distance = math.sqrt(dist_x ** 2 + dist_y ** 2)
                 if distance <= hero_1.size and hero_1.size > 1.1 * hero_2.size:
-                    # Меняем радиус первого игрока
-                    hero_2.size, hero_2.speed_x, hero_2.speed_y = 0, 0, 0
                     hero_1.size = math.sqrt(hero_1.size ** 2 + hero_2.size ** 2)
+                    hero_1.new_speed()
+                    hero_2.size, hero_2.speed_x, hero_2.speed_y = 0, 0, 0
 
                 if hero_1.address is not None:
                     # Подготовим данные к добавлению в список
@@ -303,9 +347,9 @@ while server_works:
                 # Проверка может ли 2-й съесть 1-го игрока
                 distance = math.sqrt(dist_x ** 2 + dist_y ** 2)
                 if distance <= hero_2.size and hero_2.size > 1.1 * hero_1.size:
-                    # Меняем радиус второго игрока
-                    hero_1.size, hero_1.speed_x, hero_1.speed_y = 0, 0, 0
                     hero_2.size = math.sqrt(hero_2.size ** 2 + hero_1.size ** 2)
+                    hero_2.new_speed()
+                    hero_1.size, hero_1.speed_x, hero_1.speed_y = 0, 0, 0
 
                 if hero_2.address is not None:
                     # Подготовим данные к добавлению в список
@@ -321,28 +365,27 @@ while server_works:
     for id in list(players):
         r_ = str(round(players[id].size))
         visible_bacteries[id] = [r_] + visible_bacteries[id]  # Добавляем в начало списка размер игрока
+        visible_bacteries[id] = "<" + ",".join(visible_bacteries[id]) + ">"
 
     # Отправляем статус игрового поля
-    for id in players:
+    for id in list(players):
         if players[id].sock is not None:
             try:
                 players[id].sock.send(visible_bacteries[id].encode())
+                players[id].errors = 0
             except:
-                players[id].sock.close()
-                del players[id]
-                # Так же удаляем строчку из БД
-                s.query(Player).filter(Player.id == id).delete()
-                s.commit()
-                print("Сокет закрыт")
+                players[id].errors += 1
 
     # Чистим список от отвалившихся игроков
     for id in list(players):
         if players[id].errors >= 500 or players[id].size == 0:
             if players[id].sock is not None:
                 players[id].sock.close()
+                print("Сокет отключен")
             del players[id]
             s.query(Player).filter(Player.id == id).delete()
             s.commit()
+
 
     # Отрисовываем серверное окно
     for event in pygame.event.get():
@@ -355,13 +398,13 @@ while server_works:
         x = player.x * WIDHT_SERVER // WIDHT_ROOM
         y = player.y * HEIGHT_SERVER // HEIGHT_ROOM
         size = player.size * WIDHT_SERVER // WIDHT_ROOM
-        print(x,y)
-        pygame.draw.circle(screen, player.color, (x, y), size)
-        player.update()
+        pygame.draw.circle(screen, player.color, (x, y), size)  # Цвет
+
+    for id in list(players):
+        player = players[id]
+        players[id].update()
         if tick % 500 == 0:
-            player.sync()
-
-
+            players[id].sync()
 
     pygame.display.update()
 

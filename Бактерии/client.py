@@ -112,10 +112,13 @@ while run:
 
     # Рисуем новое поле
     screen.fill('gray')
-    pygame.draw.circle(screen, color, CC, radius)
+
     if data!= ['']:
         radius = int(data[0])  # Сохраняем размер из сообщения в переменную
         draw_bacteries(data[1:])  # Срезаем размер, чтобы он не попадал в ф-ию
+
+    pygame.draw.circle(screen, color, CC, radius)
+
     pygame.display.update()
 
     time.sleep(0.01)
