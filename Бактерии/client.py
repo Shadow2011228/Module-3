@@ -1,13 +1,11 @@
 import math
 import socket
 import time
-import pygame
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox
 from tkinter.colorchooser import askcolor
-
-pygame.init()
+import pygame
 
 WIDTH = 800
 HEIGHT = 600
@@ -26,17 +24,17 @@ def login():
         root.destroy()
         root.quit()
     else:
-        tk.messagebox.showerror("Ошибка", "Ты не выбрал цвет или не ввёл имя!")
+        tk.messagebox.showerror("Error", "No color or name")
 
 
 root = tk.Tk()
-root.title("Логин")
+root.title("Login")
 root.geometry("300x200")
 
 style = ttk.Style()
 style.theme_use('clam')
 
-name_label = tk.Label(root, text="Введи свой никнейм:")
+name_label = tk.Label(root, text="Enter your nickname:")
 name_label.pack()
 
 row = tk.Entry(root, width=30, justify="center")
@@ -44,13 +42,13 @@ row.pack()
 
 def arc():
     global color
-    color_code = askcolor(title="Выбери цвет")
+    color_code = askcolor(title="Choose color")
     color = color_code[1]
 
-color_btn = tk.Button(root, text="Выбери цвет:", command=arc)
+color_btn = tk.Button(root, text="Choose color:", command=arc)
 color_btn.pack()
 
-name_btn = tk.Button(root, text="Зайти в игру", command=login)
+name_btn = tk.Button(root, text="Enter the game", command=login)
 name_btn.pack()
 root.mainloop()
 
@@ -61,13 +59,15 @@ sock.connect(("localhost", 10000))
 # Отправляем цвет и имя
 sock.send(("color:<" + name + "," + color + ">").encode())
 
-font = pygame.font.SysFont('arial', 15)
+pygame.init()
+
+font = pygame.font.SysFont('Arial', 15)
 text_surface = font.render(name, True, (0, 0, 0))
 text_rect = text_surface.get_rect()
 text_rect.center = CC
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Бактерии")
+pygame.display.set_caption("Bacteries")
 
 def find(vector: str):
     first = None
@@ -107,7 +107,7 @@ while run:
 
     # Получаем
     data = sock.recv(1024).decode()
-    print("Получил:", data)
+    print("Reciev:", data)
     data = find(data).split(",")  # Разбиваем на шары
 
     # Рисуем новое поле
@@ -118,6 +118,7 @@ while run:
         draw_bacteries(data[1:])  # Срезаем размер, чтобы он не попадал в ф-ию
 
     pygame.draw.circle(screen, color, CC, radius)
+    screen.blit(text_surface, text_rect)
 
     pygame.display.update()
 

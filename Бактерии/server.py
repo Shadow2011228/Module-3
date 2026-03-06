@@ -10,7 +10,7 @@ import pygame
 from russian_names import RussianNames
 
 
-engine = create_engine("postgresql+psycopg2://postgres:68307@localhost/rebotica")
+engine = create_engine("postgresql+psycopg2://postgres:Zz050508@localhost/rebotica")
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 s = Session()
@@ -403,8 +403,8 @@ while server_works:
     for id in list(players):
         player = players[id]
         players[id].update()
-        if tick % 500 == 0:
-            players[id].sync()
+        # if tick % 5000 == 0:
+        #     players[id].sync()
 
     pygame.display.update()
 
