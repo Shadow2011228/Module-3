@@ -100,6 +100,7 @@ class LocalPlayer:
         self.color = "red"
         self.w_vision = 800
         self.h_vision = 600
+        self.eat_time = 0
 
     def update(self):
         # х координата
@@ -125,6 +126,7 @@ class LocalPlayer:
         # Меняем размер
         if self.size >= 100:
             self.size -= self.size / 18000
+
 
     def new_speed(self):
         #  Меняем абсолютную скорость игрока
@@ -304,6 +306,7 @@ while server_works:
                     # Тут мы в будущем напишем код увеличения размера
                     hero.size = math.sqrt(hero.size ** 2 + food.size ** 2)
                     hero.new_speed()
+                    hero.eat_time = 0
                     food.size = 0
                     foods.remove(food)
                 if hero.address is not None and food.size != 0:
@@ -331,6 +334,7 @@ while server_works:
                     hero_1.size = math.sqrt(hero_1.size ** 2 + hero_2.size ** 2)
                     hero_1.new_speed()
                     hero_2.size, hero_2.speed_x, hero_2.speed_y = 0, 0, 0
+                    hero_1.eat_time = 0
 
                 if hero_1.address is not None:
                     # Подготовим данные к добавлению в список
@@ -350,6 +354,7 @@ while server_works:
                     hero_2.size = math.sqrt(hero_2.size ** 2 + hero_1.size ** 2)
                     hero_2.new_speed()
                     hero_1.size, hero_1.speed_x, hero_1.speed_y = 0, 0, 0
+                    hero_2.eat_time = 0
 
                 if hero_2.address is not None:
                     # Подготовим данные к добавлению в список
@@ -403,6 +408,11 @@ while server_works:
     for id in list(players):
         player = players[id]
         players[id].update()
+        players[id].eat_time += 1
+        if players[id].eat_time % 500 == 0 and players[id].size > 100:
+            players[id].size -= 10
+            players[id].eat_time = 0
+
         # if tick % 5000 == 0:
         #     players[id].sync()
 
