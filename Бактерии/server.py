@@ -101,6 +101,7 @@ class LocalPlayer:
         self.w_vision = 800
         self.h_vision = 600
         self.eat_time = 0
+        self.L = 1
 
     def update(self):
         # х координата
@@ -126,6 +127,19 @@ class LocalPlayer:
         # Меняем размер
         if self.size >= 100:
             self.size -= self.size / 18000
+
+        # Меняем масштаб игрока
+        if self.size >= self.w_vision / 4:
+            if self.w_vision <= WIDHT_ROOM or self.h_vision <= HEIGHT_ROOM:
+                self.L *= 2
+                self.w_vision = 800 * self.L
+                self.h_vision = 600 * self.L
+
+        if self.size < self.w_vision / 8 and self.size < self.h_vision / 8:
+            if self.L > 1:
+                self.L //= 2
+                self.w_vision = 800 * self.L
+                self.h_vision = 600 * self.L
 
 
     def new_speed(self):
@@ -311,9 +325,9 @@ while server_works:
                     foods.remove(food)
                 if hero.address is not None and food.size != 0:
                     # Подготовим данные к добавлению в список
-                    x_ = str(round(dist_x))
-                    y_ = str(round(dist_y))  # временные
-                    size_ = str(round(food.size))
+                    x_ = str(round(dist_x / hero.L))
+                    y_ = str(round(dist_y / hero.L))  # временные
+                    size_ = str(round(food.size / hero.L))
                     color_ = food.color
 
                     data = x_ + " " + y_ + " " + size_ + " " + color_
@@ -338,9 +352,9 @@ while server_works:
 
                 if hero_1.address is not None:
                     # Подготовим данные к добавлению в список
-                    x_ = str(round(dist_x))
-                    y_ = str(round(dist_y))  # временные
-                    size_ = str(round(hero_2.size))
+                    x_ = str(round(dist_x / hero_1.L))
+                    y_ = str(round(dist_y / hero_1.L))  # временные
+                    size_ = str(round(hero_2.size/ hero_1.L))
                     color_ = hero_2.color
 
                     data = x_ + " " + y_ + " " + size_ + " " + color_
@@ -358,9 +372,9 @@ while server_works:
 
                 if hero_2.address is not None:
                     # Подготовим данные к добавлению в список
-                    x_ = str(round(-dist_x))
-                    y_ = str(round(-dist_y))  # временные
-                    size_ = str(round(hero_1.size))
+                    x_ = str(round(-dist_x / hero_2.L))
+                    y_ = str(round(-dist_y / hero_2.L))  # временные
+                    size_ = str(round(hero_1.size / hero_2.L))
                     color_ = hero_1.color
 
                     data = x_ + " " + y_ + " " + size_ + " " + color_
@@ -368,7 +382,7 @@ while server_works:
 
     # Формируем ответ каждой бактерии
     for id in list(players):
-        r_ = str(round(players[id].size))
+        r_ = str(round(players[id].size / players[id].L))
         visible_bacteries[id] = [r_] + visible_bacteries[id]  # Добавляем в начало списка размер игрока
         visible_bacteries[id] = "<" + ",".join(visible_bacteries[id]) + ">"
 
@@ -413,8 +427,8 @@ while server_works:
             players[id].size -= 10
             players[id].eat_time = 0
 
-        # if tick % 5000 == 0:
-        #     players[id].sync()
+        if tick % 500 == 0:
+            players[id].sync()
 
     pygame.display.update()
 

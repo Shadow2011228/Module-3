@@ -10,9 +10,11 @@ import pygame
 WIDTH = 800
 HEIGHT = 600
 CC = (WIDTH // 2, HEIGHT // 2)
+FPS = 100
 
 old = (0, 0)
 radius = 50
+buffer = 1024
 
 color = ''
 name = ''
@@ -69,7 +71,10 @@ text_rect.center = CC
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Bacteries")
 
+clock = pygame.time.Clock()
+
 def find(vector: str):
+    global buffer
     first = None
     for num, sign in enumerate(vector):
         if sign == "<":
@@ -78,6 +83,8 @@ def find(vector: str):
             second = num
             result = vector[first + 1:second]  # Поменяли
             return result
+    if buffer < 10000000:
+        buffer = int(buffer* 1.5)
     return ""
 
 def draw_bacteries(data: list[str]):
@@ -91,6 +98,7 @@ def draw_bacteries(data: list[str]):
 
 run = True
 while run:
+    clock.tick(FPS)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
@@ -107,7 +115,7 @@ while run:
                 sock.send(msg.encode())
 
     # Получаем
-    data = sock.recv(1024).decode()
+    data = sock.recv(buffer).decode()
     print("Reciev:", data)
     data = find(data).split(",")  # Разбиваем на шары
 
