@@ -251,7 +251,7 @@ while server_works:
             addr = f'({addr[0]},{addr[1]})'
             data = s.query(Player).filter(Player.address == addr)
             for user in data:
-                player = LocalPlayer(user.id, "Имя", new_socket, addr).load()
+                player = LocalPlayer(user.id, player.name, new_socket, addr).load()
                 players[user.id] = player
 
         except BlockingIOError:
@@ -356,8 +356,11 @@ while server_works:
                     y_ = str(round(dist_y / hero_1.L))  # временные
                     size_ = str(round(hero_2.size/ hero_1.L))
                     color_ = hero_2.color
+                    name_ = hero_2.name
 
                     data = x_ + " " + y_ + " " + size_ + " " + color_
+                    if hero_2.size >= 30 * hero_1.L:
+                        data += " " + name_
                     visible_bacteries[hero_1.id].append(data)
 
             # j-й игрок видит i-того
@@ -383,7 +386,10 @@ while server_works:
     # Формируем ответ каждой бактерии
     for id in list(players):
         r_ = str(round(players[id].size / players[id].L))
-        visible_bacteries[id] = [r_] + visible_bacteries[id]  # Добавляем в начало списка размер игрока
+        x_ = str(round(players[id].x / players[id].L))
+        y_ = str(round(players[id].y / players[id].L))
+        L_ = str(round(players[id].L))
+        visible_bacteries[id] = [r_+' '+x_+' '+y_+' '+L_] + visible_bacteries[id]  # Добавляем в начало списка размер игрока
         visible_bacteries[id] = "<" + ",".join(visible_bacteries[id]) + ">"
 
     # Отправляем статус игрового поля

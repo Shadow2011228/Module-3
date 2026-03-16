@@ -63,11 +63,6 @@ sock.send(("color:<" + name + "," + color + ">").encode())
 
 pygame.init()
 
-font = pygame.font.SysFont('Arial', 15)
-text_surface = font.render(name, True, (0, 0, 0))
-text_rect = text_surface.get_rect()
-text_rect.center = CC
-
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Bacteries")
 
@@ -87,6 +82,12 @@ def find(vector: str):
         buffer = int(buffer* 1.5)
     return ""
 
+def draw_text(x, y, r, text, color):
+    font = pygame.font.Font(None, r)
+    text = font.render(text, True, color)
+    rect = text.get_rect(center=(x, y))
+    screen.blit(text, rect)
+
 def draw_bacteries(data: list[str]):
     for num, bact in enumerate(data):
         data = bact.split(" ")  # Разбиваем по пробелам подстроку одной бактерии
@@ -95,6 +96,37 @@ def draw_bacteries(data: list[str]):
         size = int(data[2])
         color = data[3]
         pygame.draw.circle(screen, color, (x, y), size)
+        if len(data) > 4:
+            draw_text(x, y, size // 2, data[4], "black")
+
+class Grid:
+    def __init__(self, screen, color):
+        self.screen = screen
+        self.x = 0
+        self.y = 0
+        self.start_size = 200
+        self.size = self.start_size
+        self.color = color
+    def update(self, parameters: list[int]):
+        x, y, L = parameters
+        self.size = self.start_size // L
+        self.x = -self.size + (-x) % self.size
+        self.y = -self.size + (-y) % self.size
+
+
+    def draw(self):
+        for i in range(WIDTH // self.size + 2):
+            pygame.draw.line(self.screen, self.color,
+                             (self.x + i * self.size, 0),  # Координаты начала линии
+                             (self.x + i * self.size, HEIGHT),  # Координаты конца линии
+                             1)
+        for i in range(HEIGHT // self.size + 2):
+            pygame.draw.line(self.screen, self.color,
+                             (0, self.y + i * self.size),  # Координаты начала линии
+                             (WIDTH, self.y + i * self.size),  # Координаты конца линии
+                             1)
+
+grid = Grid(screen, "seashell4")
 
 run = True
 while run:
@@ -123,11 +155,14 @@ while run:
     screen.fill('gray')
 
     if data!= ['']:
-        radius = int(data[0])  # Сохраняем размер из сообщения в переменную
+        parameters = list(map(int, data[0].split(" ")))
+        radius = parameters[0]  # Сохраняем размер из сообщения в переменную
+        grid.update(parameters[1:])
+        grid.draw()
         draw_bacteries(data[1:])  # Срезаем размер, чтобы он не попадал в ф-ию
 
     pygame.draw.circle(screen, color, CC, radius)
-    screen.blit(text_surface, text_rect)
+    draw_text(CC[0], CC[1], radius // 2, name, "black")
 
     pygame.display.update()
 
