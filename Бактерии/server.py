@@ -76,6 +76,7 @@ class Player(Base):
     color = Column(String(250), default="red")  # Добавили цвет
     w_vision = Column(Integer, default=800)
     h_vision = Column(Integer, default=600)  # Добавили размер квадрат
+    L = Column(Integer, default=1)
 
     def __init__(self, name, address):
         self.name = name

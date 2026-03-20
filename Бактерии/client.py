@@ -6,6 +6,7 @@ from tkinter import ttk
 import tkinter.messagebox
 from tkinter.colorchooser import askcolor
 import pygame
+import pyautogui
 
 WIDTH = 800
 HEIGHT = 600
@@ -59,7 +60,11 @@ sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Отключаем
 sock.connect(("localhost", 10000))
 
 # Отправляем цвет и имя
-sock.send(("color:<" + name + "," + color + ">").encode())
+try:
+    sock.send(("color:<" + name + "," + color + ">").encode())
+
+except:
+    pyautogui.alert(text="Предуприждение!", title="Ошибка", button="OK")
 
 pygame.init()
 
@@ -133,7 +138,15 @@ while run:
     clock.tick(FPS)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            screen.fill((0,0,0))
+            font = pygame.font.Font(None, 72)
+            text = font.render('Спасибо за игру!', True, (255,255,255))
+            text_rect = text.get_rect(center=(400,300))
+            screen.blit(text, text_rect)
+            pygame.display.flip()
+            time.sleep(3)
             run = False
+
         if pygame.mouse.get_focused():
             pos = pygame.mouse.get_pos()
             vector = pos[0] - CC[0], pos[1] - CC[1]
@@ -147,9 +160,12 @@ while run:
                 sock.send(msg.encode())
 
     # Получаем
-    data = sock.recv(buffer).decode()
-    print("Reciev:", data)
-    data = find(data).split(",")  # Разбиваем на шары
+    try:
+        data = sock.recv(buffer).decode()
+        print("Reciev:", data)
+        data = find(data).split(",")  # Разбиваем на шары
+    except:
+        pyautogui.alert(text="Предуприждение!", title="Ошибка", button="OK")
 
     # Рисуем новое поле
     screen.fill('gray')
@@ -167,5 +183,11 @@ while run:
     pygame.display.update()
 
     time.sleep(0.01)
+
+# exit_label = tk.Label(root, text="Спасибо за игру")
+# exit_label.pack()
+# root.mainloop()
+# time.sleep(3)
+# root.quit()
 
 pygame.quit()
