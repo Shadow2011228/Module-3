@@ -12,12 +12,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
 
-class Window(QMainWindow):
+class Window(QMainWindow, Ui_MainWindow):
     def __init__(self):
-        super(Window, self).__init__()
-        self.setWindowTitle("Login")
-        # self.setGeometry(300, 250, 350, 500)  # Ручное размещение
-        self.setFixedSize(350, 500)  # Спавн по центру экрана
+        super().__init__()
+        self.setupUi(self)
+
 
 def application():
     app = QApplication(sys.argv)
@@ -29,4 +28,3 @@ if __name__ == "__main__":
     import sys
 
     application()
-
