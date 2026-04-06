@@ -380,8 +380,11 @@ while server_works:
                     y_ = str(round(-dist_y / hero_2.L))  # временные
                     size_ = str(round(hero_1.size / hero_2.L))
                     color_ = hero_1.color
+                    name_ = hero_1.name
 
                     data = x_ + " " + y_ + " " + size_ + " " + color_
+                    if hero_1.size >= 30 * hero_2.L:
+                        data += " " + name_
                     visible_bacteries[hero_2.id].append(data)
 
     # Формируем ответ каждой бактерии
@@ -417,6 +420,17 @@ while server_works:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             server_works = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                for id in list(players):
+                    player = players[id]
+                    if player.sock is not None:
+                        player.size *= 2
+            if event.key == pygame.K_DOWN:
+                for id in list(players):
+                    player = players[id]
+                    if player.sock is not None:
+                        player.size //= 2
 
     screen.fill('black')
     for id in list(players):

@@ -157,7 +157,10 @@ while run:
             if vector != old:
                 old = vector
                 msg = f"<{vector[0]},{vector[1]}>"
-                sock.send(msg.encode())
+                try:
+                    sock.send(msg.encode())
+                except:
+                    pass
 
     # Получаем
     try:
