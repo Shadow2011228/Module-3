@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>i.webp</file>
+  </qresource>
+  <qresource prefix="newPrefix">
+    <file>Soccer_Ball_icon-icons.com_76265.webp</file>
+  </qresource>
+</RCC>
