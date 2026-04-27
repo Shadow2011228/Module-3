@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>c75a4887-3598-49b4-986b-824f03a66a02.webp</file>
+  </qresource>
+  <qresource prefix="newPrefix">
+    <file>recipepizzaicon_109877.png</file>
+  </qresource>
+</RCC>

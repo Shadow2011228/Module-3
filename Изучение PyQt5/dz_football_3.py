@@ -58,6 +58,14 @@ class Window(QMainWindow, Ui_MainWindow):
             self.upScale()
         elif e.key() == Qt.Key_S:
             self.downScale()
+        elif e.key() == Qt.Key_A:
+            self.leftScale()
+        elif e.key() == Qt.Key_D:
+            self.rightScale()
+        x, y, _, _ = self.label_2.geometry().getRect()
+
+        if x < 221 and y < 151:
+            self.close()
 
     def upScale(self):
         rect = list(self.label_2.geometry().getRect())
@@ -66,11 +74,21 @@ class Window(QMainWindow, Ui_MainWindow):
         self.label_2.move(rect[0], rect[1])
 
     def downScale(self):
-        rect = self.label_2.rect().getRect()
+        rect = list(self.label_2.geometry().getRect())
+        rect[1] += 10
+
+        self.label_2.move(rect[0], rect[1])
+
+    def leftScale(self):
+        rect = list(self.label_2.geometry().getRect())
         rect[0] -= 10
-        rect[1] -= 10
-        print(rect[0])
-        print(rect[1])
+
+        self.label_2.move(rect[0], rect[1])
+
+    def rightScale(self):
+        rect = list(self.label_2.geometry().getRect())
+        rect[0] += 10
+
         self.label_2.move(rect[0], rect[1])
 
 def application():
