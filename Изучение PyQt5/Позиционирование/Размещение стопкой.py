@@ -55,6 +55,7 @@ class Window(QMainWindow, Ui_MainWindow):
             layout.addWidget(Color(color))
 
         layout.setCurrentIndex(2)
+
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)

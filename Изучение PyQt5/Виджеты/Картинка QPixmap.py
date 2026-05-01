@@ -44,7 +44,7 @@ class Window(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
 
-        self.pixmap = QPixmap('pizza.png')
+        self.pixmap = QPixmap('imgs/pizza.png')
         self.lbl = QLabel(self)
         self.lbl.setPixmap(self.pixmap)
         self.lbl.setGeometry(self.pixmap.rect())
