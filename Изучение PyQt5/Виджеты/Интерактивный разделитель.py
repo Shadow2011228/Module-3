@@ -48,17 +48,27 @@ class Window(QMainWindow, Ui_MainWindow):
         self.pm_list = []
         splitter1 = QSplitter(Qt.Horizontal)
 
+        self.pm_list_1 = []
+        splitter2 = QSplitter(Qt.Vertical)
+
         files_list = ['imgs/red ship.jpg', 'imgs/oranzhevaya-ovcza.jpg', 'imgs/yellow ship.png']
         for file in files_list:
             self.pm_list.append(QPixmap(file))
+            self.pm_list_1.append(QPixmap(file))
 
         layout = QHBoxLayout()
+        layout_2 = QVBoxLayout()
+        layout.addLayout(layout_2)
 
         for pm in self.pm_list:
             label = QLabel()
             label.setPixmap(pm.scaledToWidth(200))
+            label2 = QLabel()
+            label2.setPixmap(pm.scaledToWidth(200))
             splitter1.addWidget(label)
+            splitter2.addWidget(label2)
         layout.addWidget(splitter1)
+        layout_2.addWidget(splitter2)
 
         widget = QWidget()
         widget.setLayout(layout)
