@@ -75,6 +75,8 @@ class Window(QMainWindow, Ui_MainWindow):
         text, ok = QInputDialog.getText(self, 'Как дела?', 'Нормально нериально?')
         ans.append(text)
         self.pushButton.setText("Продолжить")
+        self.pushButton.disconnect()
+        self.pushButton.clicked.connect(self.quit)
         self.label.setStyleSheet("")
         text = ''
         for a in ans:
@@ -82,6 +84,8 @@ class Window(QMainWindow, Ui_MainWindow):
         self.label.setText(text)
 
 
+    def quit(self):
+        self.close()
 
 
 def application():
