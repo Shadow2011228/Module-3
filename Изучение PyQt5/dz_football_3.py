@@ -10,7 +10,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
-import random
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
