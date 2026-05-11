@@ -17,14 +17,21 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(478, 388)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        self.choose_file_button = QtWidgets.QPushButton(self.centralwidget)
+        self.choose_file_button.setGeometry(QtCore.QRect(10, 10, 451, 41))
+        self.choose_file_button.setObjectName("choose_file_button")
+        self.send_file_button = QtWidgets.QPushButton(self.centralwidget)
+        self.send_file_button.setGeometry(QtCore.QRect(10, 320, 451, 41))
+        self.send_file_button.setObjectName("send_file_button")
+        self.frame = QtWidgets.QFrame(self.centralwidget)
+        self.frame.setGeometry(QtCore.QRect(9, 69, 451, 241))
+        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame.setObjectName("frame")
         MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
-        self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
@@ -35,24 +42,30 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.choose_file_button.setText(_translate("MainWindow", "Выбрать файл"))
+        self.send_file_button.setText(_translate("MainWindow", "Отправить файл"))
 
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog
+
 
 class Window(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.create_socket()
-        self.file_path = ''
+        self.choose_file_button.clicked.connect(self.choose_file)
+        self.send_file_button.clicked.connect(self.create_socket)
+
+
 
     def create_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Настраиваем сокет
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # Отключаем пакетирование
         self.sock.connect(("localhost", 10000))
         print("Сокет создался")
+        self.send_meta()
 
     def send_meta(self):
-        self.sock.send(f'LOL'.encode())
+        self.sock.send(f'meta:{self.suf}'.encode())
         answer = ''
         while answer != 'send_me':
             try:
@@ -63,9 +76,20 @@ class Window(QMainWindow, Ui_MainWindow):
         self.send()
 
     def send(self):
-        # with open(self.file_path, 'rb') as f:
-        #     self.sock.sendfile(f)
+        with open(self.file_path, 'rb') as f:
+            self.sock.sendfile(f)
         self.sock.send('END'.encode())
+
+    def choose_file(self):
+        data = QFileDialog.getOpenFileUrl(self, "Выбери файл")
+        self.file_name = data[0].fileName()
+        self.file_path = data[0].url()[8:]
+        self.suf = self.file_name[self.file_name.rfind("."):]
+        if self.suf in (".jpg", ".jpeg", ".png", ".bmp", ".webm"):
+            # Установка картинки в Frame
+            self.frame.setStyleSheet(f"image: url('{self.file_path}');")
+        else:
+            self.frame.setStyleSheet("image: url('file.png');")
 
 
 
@@ -73,7 +97,7 @@ def application():
     app = QApplication(sys.argv)
     window = Window()
     window.show()
-    window.send_meta()
+    # window.send_meta()
     sys.exit(app.exec())
 
 if __name__ == "__main__":

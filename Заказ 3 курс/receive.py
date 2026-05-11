@@ -17,14 +17,21 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(478, 388)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        self.get_file = QtWidgets.QPushButton(self.centralwidget)
+        self.get_file.setGeometry(QtCore.QRect(10, 10, 451, 41))
+        self.get_file.setObjectName("get_file")
+        self.frame = QtWidgets.QFrame(self.centralwidget)
+        self.frame.setGeometry(QtCore.QRect(10, 60, 451, 251))
+        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame.setObjectName("frame")
+        self.save_file_button = QtWidgets.QPushButton(self.centralwidget)
+        self.save_file_button.setGeometry(QtCore.QRect(10, 320, 451, 41))
+        self.save_file_button.setObjectName("save_file_button")
         MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
-        self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
@@ -35,14 +42,19 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.get_file.setText(_translate("MainWindow", "Получить файл"))
+        self.save_file_button.setText(_translate("MainWindow", "Сохранить файл"))
 
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog
+
 
 class Window(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.create_socket()
+        self.get_file.clicked.connect(self.waiting)
+        self.save_file_button.clicked.connect(self.save_file)
 
 
     def create_socket(self):
@@ -59,17 +71,51 @@ class Window(QMainWindow, Ui_MainWindow):
                 self.socket, addr = self.main_socket.accept()  # принимаем входящие
                 print('Подключился', addr)
                 if self.socket:
-                    self.socket.send('send_me'.encode())
                     break
             except:
                 pass
+        self.get_file_meta()
+
+    def get_file_meta(self):
+        file = ""
+        while not file.startswith("meta:"):
+            try:
+                file = self.socket.recv(1024).decode()
+            except BlockingIOError:
+                pass
+        self.meta = file[5:]
+        self.socket.send("send_me".encode())
+        self.receive()
+
+    def receive(self):
+        with open("temp" + self.meta, "wb") as self.binary_file:
+            file = ""
+            while "END" not in str(file):
+                try:
+                    file = self.socket.recv(1024)
+                    if file:
+                        self.binary_file.write(file)
+                except BlockingIOError:
+                    pass
+
+        # Отобразить файл на Frame
+        if self.meta in (".jpg", ".jpeg", ".png", ".bmp", ".webm"):
+            self.frame.setStyleSheet(f"image: url('{'temp' + self.meta}');")
+        else:
+            self.frame.setStyleSheet("image: url('file.png');")
+
+    def save_file(self):
+        path = QFileDialog.getSaveFileName(self, "Сохранить как...", ".", f"file (*{self.meta});;All Files (*)")
+        import os
+        os.replace("temp" + self.meta, path[0])
+        exit()
 
 def application():
     app = QApplication(sys.argv)
     window = Window()
     window.show()
 
-    window.waiting()
+    # window.waiting()
     sys.exit(app.exec())
 
 if __name__ == "__main__":
